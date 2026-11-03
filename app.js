@@ -1,11 +1,28 @@
-// LB Desk iPhone app. Plain JS. Reads #t= (APP_TOKEN, plan A) and #d= (DATA_PATH, plan B) once into localStorage.
+// LB Desk iPhone app. Plain JS. Reads #t=/#d= (and ?t=&d=) into localStorage.
+// iOS Home Screen drops the hash and uses a separate storage — config.json bootstraps Plan B.
 (function () {
-  const h = location.hash, t = h.match(/[#&]t=([^&]+)/), d = h.match(/[#&]d=([^&]+)/), v = h.match(/[#&]v=([^&]+)/);
+  const h = location.hash, q = new URLSearchParams(location.search);
+  const t = h.match(/[#&]t=([^&]+)/) || (q.get("t") && [0, q.get("t")]);
+  const d = h.match(/[#&]d=([^&]+)/) || (q.get("d") && [0, q.get("d")]);
+  const v = h.match(/[#&]v=([^&]+)/);
   if (t) localStorage.setItem("app_token", decodeURIComponent(t[1]));
   if (d) localStorage.setItem("data_path", decodeURIComponent(d[1]));
-  if (t || d) history.replaceState(null, "", location.pathname + "#/" + (v ? v[1] : "home"));
+  if (t || d || q.get("t") || q.get("d")) {
+    const base = location.pathname + (location.search ? "" : "");
+    history.replaceState(null, "", location.pathname + "#/" + (v ? v[1] : "home"));
+  }
 })();
-const TOKEN = localStorage.getItem("app_token"), DATA = localStorage.getItem("data_path");
+let TOKEN = localStorage.getItem("app_token"), DATA = localStorage.getItem("data_path");
+async function bootConfig() {
+  if (DATA || TOKEN) return;
+  try {
+    const r = await fetch("config.json?_=" + Date.now(), { cache: "no-store" });
+    if (!r.ok) return;
+    const c = await r.json();
+    if (c && c.d) { localStorage.setItem("data_path", c.d); DATA = c.d; }
+    if (c && c.t) { localStorage.setItem("app_token", c.t); TOKEN = c.t; }
+  } catch (_) {}
+}
 const POLL_MS = 15000, STALE_S = 90;
 const S = { state: null, chart: null, activity: null, coin: {}, err: null, loaded: false, at: 0 };
 const $ = s => document.querySelector(s), view = $("#view");
@@ -63,7 +80,7 @@ function render() {
   if (!S.state) {
     chrome("LB Desk");
     view.innerHTML = S.err === "nolink"
-      ? empty("🔗", "Ouvre le lien du desk", "Ouvre le lien envoyé sur Telegram (il contient ta clé d’accès), puis ajoute l’app à l’écran d’accueil.")
+      ? empty("🔗", "Ouvre le lien du desk", "Ouvre le lien Telegram dans Safari une fois, puis Ajouter à l’écran d’accueil. Si ça échoue, mets à jour l’app (supprime l’icône et réajoute).")
       : empty("⚠️", "Impossible de charger le desk", S.err) + `<button class="btn gray" onclick="load()">Réessayer</button>`;
     return;
   }
@@ -208,4 +225,4 @@ window.addEventListener("hashchange", () => { const m = route(); if (m.name === 
 window.addEventListener("resize", render);
 document.addEventListener("visibilitychange", () => { if (!document.hidden) load(); });
 if ("serviceWorker" in navigator && location.protocol === "https:") navigator.serviceWorker.register("sw.js");
-load(); setInterval(load, POLL_MS);
+bootConfig().then(() => { load(); setInterval(load, POLL_MS); });
