@@ -110,6 +110,11 @@ function home() {
         <div class="s">En file · ${esc(String(w.waited_min))} min</div></div>
         <div class="r s">${esc(w.symbol || "")}</div></div>`).join("")}</div>`
     : `<div class="card small">File d’attente vide — en écoute PumpPortal…</div>`;
+  const plats = st.platforms || {};
+  const platOrder = [["pumpportal","PumpPortal"],["dexscreener","DexScreener"],["rugcheck","RugCheck"],["geckoterminal","Gecko"],["solana_rpc","Solana RPC"]];
+  const platHtml = `<div class="card small" style="display:flex;flex-wrap:wrap;gap:8px">${platOrder.map(([k,lab])=>{
+    const v = plats[k]||{}; const ok = v.ok; return `<span style="opacity:${ok?1:.45}">${ok?"●":"○"} ${lab}</span>`;
+  }).join("")}${plats.pumpfun_http&&!plats.pumpfun_http.ok?`<span style="opacity:.45">○ Pump.fun HTTP (CF)</span>`:""}</div>`;
   const killsHtml = kills.length
     ? `<div class="list">${kills.map(k => `<div class="item"><div class="ico i-risk">✕</div>
         <div class="main"><div class="t">${esc(k.name || "?")}</div>
@@ -121,6 +126,7 @@ function home() {
       <div class="big">${usd(eq)}</div>
       <div class="chg ${cls(ch)}">${usd(ch, true)} ${chp != null ? "(" + pct(chp) + ")" : ""} <span class="mut" style="font-weight:400">· ${st.wins}W ${st.losses}L</span></div></div>
     <canvas class="chart" id="eq"></canvas>
+    ${platHtml}
     <a class="card tap row" href="#/agents" style="display:flex"><div style="display:flex;gap:6px">${ag}</div><span class="small">${esc(deskLine(st))} ›</span></a>
     <h2>Positions ouvertes</h2>
     ${open.length ? `<div class="list">${open.map(posItem).join("")}</div>` : `<div class="card">${empty("🌙", "Aucune position", "Les agents cherchent. Tu recevras un bouton Buy sur Telegram.")}</div>`}
