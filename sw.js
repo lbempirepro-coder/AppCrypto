@@ -1,5 +1,5 @@
 // Shell cache for offline open; data JSON is always network-first.
-const C = "lbdesk-v5", SHELL = ["./", "index.html", "app.css", "app.js", "chart.js", "vapid.js", "manifest.json", "config.json", "icons/icon-192.png"];
+const C = "lbdesk-v6", SHELL = ["./", "index.html", "app.css", "app.js", "chart.js", "vapid.js", "manifest.json", "config.json", "icons/icon-192.png"];
 self.addEventListener("install", e => e.waitUntil(caches.open(C).then(c => c.addAll(SHELL)).then(() => self.skipWaiting())));
 self.addEventListener("activate", e => e.waitUntil(caches.keys().then(k => Promise.all(k.filter(x => x !== C).map(x => caches.delete(x)))).then(() => self.clients.claim())));
 self.addEventListener("fetch", e => {

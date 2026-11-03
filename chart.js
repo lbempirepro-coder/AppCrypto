@@ -20,20 +20,25 @@ window.DeskChart = (function () {
     (o.lines || []).forEach(l => {
       if (l.y == null || !isFinite(l.y)) return;
       g.save(); g.strokeStyle = l.color || "#8e8e93"; g.lineWidth = l.width || 1.5;
+      if (l.glow) { g.shadowColor = l.color; g.shadowBlur = 8; }
       if (l.dash) g.setLineDash(l.dash);
       g.beginPath(); g.moveTo(0, Y(l.y)); g.lineTo(W, Y(l.y)); g.stroke(); g.restore();
       if (l.label) { g.fillStyle = l.color || "#8e8e93"; g.font = "600 11px -apple-system,system-ui"; g.textAlign = "left";
         g.fillText(l.label, 6, Y(l.y) - 5); }
     });
     g.beginPath(); pts.forEach((p, i) => { const x = X(xs[i]), y = Y(ys[i]); i ? g.lineTo(x, y) : g.moveTo(x, y); });
-    g.strokeStyle = col; g.lineWidth = 2; g.lineJoin = "round"; g.stroke();
+    if (o.glow) { g.save(); g.shadowColor = col; g.shadowBlur = 14; g.strokeStyle = col; g.lineWidth = 2.4; g.lineJoin = "round"; g.stroke(); g.restore(); }
+    g.strokeStyle = col; g.lineWidth = o.glow ? 2.2 : 2; g.lineJoin = "round"; g.stroke();
     if (o.fill !== false) {
       g.lineTo(X(xs[xs.length - 1]), H); g.lineTo(X(xs[0]), H); g.closePath();
       const gr = g.createLinearGradient(0, 0, 0, H); gr.addColorStop(0, col + "55"); gr.addColorStop(1, col + "00");
       g.fillStyle = gr; g.fill();
     }
     const lx = X(xs[xs.length - 1]), ly = Y(ys[ys.length - 1]);
+    if (o.glow) { g.save(); g.shadowColor = col; g.shadowBlur = 18; g.beginPath(); g.arc(lx, ly, 5, 0, 7); g.fillStyle = col; g.fill(); g.restore(); }
     g.beginPath(); g.arc(lx, ly, 3.5, 0, 7); g.fillStyle = col; g.fill();
+    if (o.lastLabel) { g.fillStyle = col; g.font = "700 11px ui-monospace,Menlo,monospace"; g.textAlign = "right";
+      g.fillText(o.lastLabel, Math.max(60, lx - 8), Math.max(14, ly - 8)); }
   }
   return { line };
 })();
