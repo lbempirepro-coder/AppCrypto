@@ -102,6 +102,20 @@ function home() {
   const st = S.state, start = st.start_stack, eq = st.equity_usd ?? st.stack_usd, ch = start ? eq - start : st.pnl_usd, chp = start ? ch / start * 100 : null;
   const open = st.positions.filter(p => p.status !== "closed"), closed = st.positions.filter(p => p.status === "closed").slice(0, 5);
   const ag = Object.entries(st.agents).map(([k, a]) => `<div class="ico i-${k}" title="${k}" style="opacity:${a.status === "off" ? .35 : 1}">${AG[k][0]}</div>`).join("");
+  const watch = ((st.watch && st.watch.items) || []).slice(0, 12);
+  const kills = (st.recent_kills || []).slice(0, 12);
+  const watchHtml = watch.length
+    ? `<div class="list">${watch.map(w => `<div class="item"><div class="ico i-scanner">⏳</div>
+        <div class="main"><div class="t">${esc(w.name || (w.mint || "").slice(0, 6))}</div>
+        <div class="s">En file · ${esc(String(w.waited_min))} min</div></div>
+        <div class="r s">${esc(w.symbol || "")}</div></div>`).join("")}</div>`
+    : `<div class="card small">File d’attente vide — en écoute PumpPortal…</div>`;
+  const killsHtml = kills.length
+    ? `<div class="list">${kills.map(k => `<div class="item"><div class="ico i-risk">✕</div>
+        <div class="main"><div class="t">${esc(k.name || "?")}</div>
+        <div class="s">${esc(k.reason || "")}</div></div>
+        <div class="r s">${hm(k.ts)}</div></div>`).join("")}</div>`
+    : `<div class="card small">Aucun kill encore.</div>`;
   view.innerHTML = `
     <div class="hero"><div class="lbl">Stack ${st.mode === "PAPER" ? "papier" : "live"}</div>
       <div class="big">${usd(eq)}</div>
@@ -110,6 +124,8 @@ function home() {
     <a class="card tap row" href="#/agents" style="display:flex"><div style="display:flex;gap:6px">${ag}</div><span class="small">${esc(deskLine(st))} ›</span></a>
     <h2>Positions ouvertes</h2>
     ${open.length ? `<div class="list">${open.map(posItem).join("")}</div>` : `<div class="card">${empty("🌙", "Aucune position", "Les agents cherchent. Tu recevras un bouton Buy sur Telegram.")}</div>`}
+    <h2>File Scanner · ${watch.length}</h2>${watchHtml}
+    <h2>Pourquoi ils sont morts</h2>${killsHtml}
     ${closed.length ? `<h2>Dernières sorties</h2><div class="list">${closed.map(posItem).join("")}</div>` : ""}
     <div class="foot">Mis à jour ${ago(st.ts)} · frais FOMO ${st.fee_pct}%</div>`;
   DeskChart.line($("#eq"), S.chart && S.chart.points, { emptyText: "La courbe apparaît après le premier trade" });
